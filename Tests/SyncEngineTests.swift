@@ -31,7 +31,7 @@ final class SyncEngineTests: XCTestCase {
     func testUpdatedReminderPushesToOF() throws {
         let reminders = [TaskSnapshot(id: "R1", title: "Buy oat milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T12:00:00Z")]
         let ofTasks = [TaskSnapshot(id: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
 
@@ -45,7 +45,7 @@ final class SyncEngineTests: XCTestCase {
     func testUpdatedOFPushesToReminders() throws {
         let reminders = [TaskSnapshot(id: "R1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
         let ofTasks = [TaskSnapshot(id: "OF1", title: "Buy milk", notes: "From store", dueDate: nil, completed: false, modified: "2026-04-07T12:00:00Z")]
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
 
@@ -59,7 +59,7 @@ final class SyncEngineTests: XCTestCase {
     func testBothSidesDifferentFieldsMerges() throws {
         let reminders = [TaskSnapshot(id: "R1", title: "Oat milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T12:00:00Z")]
         let ofTasks = [TaskSnapshot(id: "OF1", title: "Buy milk", notes: "2%", dueDate: nil, completed: false, modified: "2026-04-07T12:00:00Z")]
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
 
@@ -80,7 +80,7 @@ final class SyncEngineTests: XCTestCase {
     func testDeletedInRemindersSoftDeletesInOF() throws {
         let reminders: [TaskSnapshot] = []
         let ofTasks = [TaskSnapshot(id: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
 
@@ -93,7 +93,7 @@ final class SyncEngineTests: XCTestCase {
     func testDeletedInOFDeletesInReminders() throws {
         let reminders = [TaskSnapshot(id: "R1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
         let ofTasks: [TaskSnapshot] = []
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
 
@@ -106,7 +106,7 @@ final class SyncEngineTests: XCTestCase {
     func testCompletedInRemindersPushesToOF() throws {
         let reminders = [TaskSnapshot(id: "R1", title: "Buy milk", notes: nil, dueDate: nil, completed: true, modified: "2026-04-07T12:00:00Z")]
         let ofTasks = [TaskSnapshot(id: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
 
@@ -118,7 +118,7 @@ final class SyncEngineTests: XCTestCase {
     func testNoChangesNoActions() throws {
         let reminders = [TaskSnapshot(id: "R1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
         let ofTasks = [TaskSnapshot(id: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, modified: "2026-04-07T10:00:00Z")]
-        let syncRecords = [SyncRecord(id: 1, remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
+        let syncRecords = [SyncRecord(id: 1, mappingKey: "test", remindersId: "R1", omnifocusId: "OF1", title: "Buy milk", notes: nil, dueDate: nil, completed: false, remindersModified: "2026-04-07T10:00:00Z", omnifocusModified: "2026-04-07T10:00:00Z")]
 
         let actions = SyncEngine.computeActions(reminders: reminders, ofTasks: ofTasks, syncRecords: syncRecords)
         XCTAssertTrue(actions.isEmpty)

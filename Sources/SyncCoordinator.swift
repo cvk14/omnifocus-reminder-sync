@@ -85,7 +85,7 @@ class SyncCoordinator {
             }
             self.startPollTimer()
             self.watchdog.start()
-            self.runSyncCycle()
+            self.triggerSync()
         }
     }
 
@@ -111,9 +111,9 @@ class SyncCoordinator {
                 semaphore.wait()
             }
 
-            let syncRecords = try db.fetchAll()
-
             for mapping in config.mappings {
+                let mappingKey = "\(mapping.reminders)::\(mapping.omnifocus)"
+                let syncRecords = try db.fetchByMappingKey(mappingKey)
                 try syncMapping(mapping, existingRecords: syncRecords)
             }
 
@@ -130,14 +130,30 @@ class SyncCoordinator {
         }
 
         var reminders: [TaskSnapshot] = []
+        var fetchError: Error?
         let semaphore = DispatchSemaphore(value: 0)
         Task {
-            reminders = (try? await remindersAdapter.fetchReminders(inList: list)) ?? []
+            do {
+                reminders = try await remindersAdapter.fetchReminders(inList: list)
+            } catch {
+                fetchError = error
+            }
             semaphore.signal()
         }
         semaphore.wait()
 
-        let ofTasks = (try? ofAdapter.fetchTasks(projectName: mapping.omnifocus)) ?? []
+        if let error = fetchError {
+            Logger.error("Failed to fetch reminders for '\(mapping.reminders)': \(error). Skipping mapping.")
+            return
+        }
+
+        let ofTasks: [TaskSnapshot]
+        do {
+            ofTasks = try ofAdapter.fetchTasks(projectName: mapping.omnifocus)
+        } catch {
+            Logger.error("Failed to fetch OF tasks for '\(mapping.omnifocus)': \(error). Skipping mapping.")
+            return
+        }
 
         let actions = SyncEngine.computeActions(
             reminders: reminders, ofTasks: ofTasks, syncRecords: existingRecords
@@ -150,20 +166,22 @@ class SyncCoordinator {
 
         Logger.info("Processing \(actions.count) sync actions for \(mapping.reminders) <-> \(mapping.omnifocus)")
 
+        let mappingKey = "\(mapping.reminders)::\(mapping.omnifocus)"
         for action in actions {
             do {
-                try executeAction(action, mapping: mapping, list: list)
+                try executeAction(action, mapping: mapping, mappingKey: mappingKey, list: list)
             } catch {
                 Logger.error("Action failed: \(action) — \(error)")
             }
         }
     }
 
-    private func executeAction(_ action: SyncAction, mapping: ListMapping, list: EKCalendar) throws {
+    private func executeAction(_ action: SyncAction, mapping: ListMapping, mappingKey: String, list: EKCalendar) throws {
         switch action {
         case .createInOF(let snapshot):
             let ofId = try ofAdapter.createTask(projectName: mapping.omnifocus, snapshot: snapshot)
             var record = SyncRecord(
+                mappingKey: mappingKey,
                 remindersId: snapshot.id, omnifocusId: ofId,
                 title: snapshot.title, notes: snapshot.notes,
                 dueDate: snapshot.dueDate, completed: snapshot.completed,
@@ -175,6 +193,7 @@ class SyncCoordinator {
         case .createInReminders(let snapshot):
             let rId = try remindersAdapter.createReminder(from: snapshot, inList: list)
             var record = SyncRecord(
+                mappingKey: mappingKey,
                 remindersId: rId, omnifocusId: snapshot.id,
                 title: snapshot.title, notes: snapshot.notes,
                 dueDate: snapshot.dueDate, completed: snapshot.completed,

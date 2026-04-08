@@ -12,10 +12,20 @@ struct OFTask: Codable {
 
 class OmniFocusAdapter {
 
+    // MARK: - Script Helpers
+
+    /// Escape a string for safe interpolation inside a JS template literal (backtick string).
+    static func escapeForJSTemplateLiteral(_ s: String) -> String {
+        s.replacingOccurrences(of: "\\", with: "\\\\")
+         .replacingOccurrences(of: "`", with: "\\`")
+         .replacingOccurrences(of: "${", with: "\\${")
+         .replacingOccurrences(of: "\"", with: "\\\"")
+    }
+
     // MARK: - Script Builders
 
     static func fetchTasksScript(projectName: String) -> String {
-        let escaped = projectName.replacingOccurrences(of: "\"", with: "\\\"")
+        let escaped = escapeForJSTemplateLiteral(projectName)
         return """
         const app = Application("OmniFocus");
         app.evaluateJavascript(`
@@ -38,9 +48,9 @@ class OmniFocusAdapter {
     }
 
     static func createTaskScript(projectName: String, title: String, notes: String?, dueDate: String?) -> String {
-        let escapedProject = projectName.replacingOccurrences(of: "\"", with: "\\\"")
-        let escapedTitle = title.replacingOccurrences(of: "\"", with: "\\\"")
-        let escapedNotes = (notes ?? "").replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedProject = escapeForJSTemplateLiteral(projectName)
+        let escapedTitle = escapeForJSTemplateLiteral(title)
+        let escapedNotes = escapeForJSTemplateLiteral(notes ?? "")
         let dueLine = dueDate.map { "t.dueDate = new Date(\"\($0)\");" } ?? ""
         return """
         const app = Application("OmniFocus");
@@ -55,8 +65,8 @@ class OmniFocusAdapter {
     }
 
     static func updateTaskScript(taskId: String, title: String, notes: String?, dueDate: String?, completed: Bool) -> String {
-        let escapedTitle = title.replacingOccurrences(of: "\"", with: "\\\"")
-        let escapedNotes = (notes ?? "").replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedTitle = escapeForJSTemplateLiteral(title)
+        let escapedNotes = escapeForJSTemplateLiteral(notes ?? "")
         let dueLine = dueDate.map { "t.dueDate = new Date(\"\($0)\");" } ?? "t.dueDate = null;"
         let completionLine = completed ? "t.markComplete();" : "t.markIncomplete();"
         return """
@@ -88,7 +98,9 @@ class OmniFocusAdapter {
     // MARK: - JSON Parsing
 
     static func parseTasks(from jsonString: String) throws -> [TaskSnapshot] {
-        let data = jsonString.data(using: .utf8)!
+        guard let data = jsonString.data(using: .utf8) else {
+            throw OFError.invalidJSON(jsonString)
+        }
         let ofTasks = try JSONDecoder().decode([OFTask].self, from: data)
         return ofTasks.map { t in
             TaskSnapshot(
@@ -158,4 +170,5 @@ class OmniFocusAdapter {
 
 enum OFError: Error {
     case scriptFailed(Int32, String)
+    case invalidJSON(String)
 }

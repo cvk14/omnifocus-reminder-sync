@@ -51,7 +51,10 @@ struct SyncEngine {
                 continue
             }
 
-            if !reminderExists && !ofExists { continue }
+            if !reminderExists && !ofExists {
+                actions.append(.deleteSyncRecord(record))
+                continue
+            }
 
             let currentReminder = remindersByID[record.remindersId]!
             let currentOF = ofByID[record.omnifocusId]!

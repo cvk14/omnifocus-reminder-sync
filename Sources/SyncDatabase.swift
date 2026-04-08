@@ -3,6 +3,7 @@ import GRDB
 
 struct SyncRecord: Codable, FetchableRecord, MutablePersistableRecord, Equatable {
     var id: Int64?
+    var mappingKey: String
     var remindersId: String
     var omnifocusId: String
     var title: String
@@ -38,6 +39,7 @@ class SyncDatabase {
         migrator.registerMigration("v1") { db in
             try db.create(table: "sync_records") { t in
                 t.autoIncrementedPrimaryKey("id")
+                t.column("mappingKey", .text).notNull()
                 t.column("remindersId", .text).notNull().unique()
                 t.column("omnifocusId", .text).notNull().unique()
                 t.column("title", .text).notNull()
@@ -84,6 +86,12 @@ class SyncDatabase {
     func fetchAll() throws -> [SyncRecord] {
         try dbQueue.read { db in
             try SyncRecord.fetchAll(db)
+        }
+    }
+
+    func fetchByMappingKey(_ key: String) throws -> [SyncRecord] {
+        try dbQueue.read { db in
+            try SyncRecord.filter(Column("mappingKey") == key).fetchAll(db)
         }
     }
 }

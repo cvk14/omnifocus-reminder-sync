@@ -11,7 +11,7 @@ final class SyncDatabaseTests: XCTestCase {
 
     func testInsertAndFetchRecord() throws {
         var record = SyncRecord(
-            remindersId: "R1", omnifocusId: "OF1",
+            mappingKey: "test", remindersId: "R1", omnifocusId: "OF1",
             title: "Buy milk", notes: nil, dueDate: nil,
             completed: false,
             remindersModified: "2026-04-07T10:00:00Z",
@@ -26,7 +26,7 @@ final class SyncDatabaseTests: XCTestCase {
 
     func testFetchByOmnifocusId() throws {
         var record = SyncRecord(
-            remindersId: "R1", omnifocusId: "OF1",
+            mappingKey: "test", remindersId: "R1", omnifocusId: "OF1",
             title: "Test", notes: nil, dueDate: nil,
             completed: false,
             remindersModified: "2026-04-07T10:00:00Z",
@@ -40,7 +40,7 @@ final class SyncDatabaseTests: XCTestCase {
 
     func testUpdateRecord() throws {
         var record = SyncRecord(
-            remindersId: "R1", omnifocusId: "OF1",
+            mappingKey: "test", remindersId: "R1", omnifocusId: "OF1",
             title: "Buy milk", notes: nil, dueDate: nil,
             completed: false,
             remindersModified: "2026-04-07T10:00:00Z",
@@ -59,7 +59,7 @@ final class SyncDatabaseTests: XCTestCase {
 
     func testDeleteRecord() throws {
         var record = SyncRecord(
-            remindersId: "R1", omnifocusId: "OF1",
+            mappingKey: "test", remindersId: "R1", omnifocusId: "OF1",
             title: "Test", notes: nil, dueDate: nil,
             completed: false,
             remindersModified: "2026-04-07T10:00:00Z",
@@ -74,14 +74,14 @@ final class SyncDatabaseTests: XCTestCase {
 
     func testFetchAllForMapping() throws {
         var r1 = SyncRecord(
-            remindersId: "R1", omnifocusId: "OF1",
+            mappingKey: "test", remindersId: "R1", omnifocusId: "OF1",
             title: "A", notes: nil, dueDate: nil,
             completed: false,
             remindersModified: "2026-04-07T10:00:00Z",
             omnifocusModified: "2026-04-07T10:00:00Z"
         )
         var r2 = SyncRecord(
-            remindersId: "R2", omnifocusId: "OF2",
+            mappingKey: "test", remindersId: "R2", omnifocusId: "OF2",
             title: "B", notes: nil, dueDate: nil,
             completed: false,
             remindersModified: "2026-04-07T10:00:00Z",
