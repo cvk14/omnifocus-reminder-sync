@@ -20,31 +20,62 @@ class OmniFocusAdapter {
          .replacingOccurrences(of: "`", with: "\\`")
          .replacingOccurrences(of: "${", with: "\\${")
          .replacingOccurrences(of: "\"", with: "\\\"")
+         .replacingOccurrences(of: "\n", with: "\\\\n")
+         .replacingOccurrences(of: "\r", with: "\\\\r")
+    }
+
+    /// The reserved omnifocus name that means "use the real OF inbox, not a project."
+    static let inboxSentinel = "Inbox"
+
+    static func isInbox(_ projectName: String) -> Bool {
+        projectName == inboxSentinel
     }
 
     // MARK: - Script Builders
 
     static func fetchTasksScript(projectName: String) -> String {
-        let escaped = escapeForJSTemplateLiteral(projectName)
-        return """
-        const app = Application("OmniFocus");
-        app.evaluateJavascript(`
-            const proj = flattenedProjects.byName("\(escaped)");
-            if (!proj) { JSON.stringify([]); }
-            else {
-                const tasks = proj.flattenedTasks.map(t => ({
-                    id: t.id.primaryKey,
-                    name: t.name,
-                    note: t.note || null,
-                    dueDate: t.dueDate ? t.dueDate.toISOString().substring(0,10) : null,
-                    completed: t.taskStatus.name === "Completed",
-                    modified: t.modified ? t.modified.toISOString() : null,
-                    tags: t.tags.map(tag => tag.name)
-                }));
+        if isInbox(projectName) {
+            return """
+            const app = Application("OmniFocus");
+            app.evaluateJavascript(`
+                const tasks = [];
+                for (let i = 0; i < inbox.length; i++) {
+                    const t = inbox[i];
+                    tasks.push({
+                        id: t.id.primaryKey,
+                        name: t.name,
+                        note: t.note || null,
+                        dueDate: t.dueDate ? t.dueDate.toISOString().substring(0,10) : null,
+                        completed: t.taskStatus.name === "Completed",
+                        modified: t.modified ? t.modified.toISOString() : null,
+                        tags: t.tags.map(tag => tag.name)
+                    });
+                }
                 JSON.stringify(tasks);
-            }
-        `);
-        """
+            `);
+            """
+        } else {
+            let escaped = escapeForJSTemplateLiteral(projectName)
+            return """
+            const app = Application("OmniFocus");
+            app.evaluateJavascript(`
+                const proj = flattenedProjects.byName("\(escaped)");
+                if (!proj) { JSON.stringify([]); }
+                else {
+                    const tasks = proj.flattenedTasks.map(t => ({
+                        id: t.id.primaryKey,
+                        name: t.name,
+                        note: t.note || null,
+                        dueDate: t.dueDate ? t.dueDate.toISOString().substring(0,10) : null,
+                        completed: t.taskStatus.name === "Completed",
+                        modified: t.modified ? t.modified.toISOString() : null,
+                        tags: t.tags.map(tag => tag.name)
+                    }));
+                    JSON.stringify(tasks);
+                }
+            `);
+            """
+        }
     }
 
     static func createTaskScript(projectName: String, title: String, notes: String?, dueDate: String?) -> String {
@@ -52,11 +83,13 @@ class OmniFocusAdapter {
         let escapedTitle = escapeForJSTemplateLiteral(title)
         let escapedNotes = escapeForJSTemplateLiteral(notes ?? "")
         let dueLine = dueDate.map { "t.dueDate = new Date(\"\($0)\");" } ?? ""
+        let targetExpr = isInbox(projectName)
+            ? "inbox.beginning"
+            : "flattenedProjects.byName(\"\(escapedProject)\").beginning"
         return """
         const app = Application("OmniFocus");
         app.evaluateJavascript(`
-            const proj = flattenedProjects.byName("\(escapedProject)");
-            const t = new Task("\(escapedTitle)", proj.beginning);
+            const t = new Task("\(escapedTitle)", \(targetExpr));
             t.note = "\(escapedNotes)";
             \(dueLine)
             t.id.primaryKey;
